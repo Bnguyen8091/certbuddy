@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>certbuddy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header>
+    <button type="button" class="brand" id="brand" title="Home"><span class="prompt">$</span> certbuddy<span class="cursor"></span></button>
+    <nav>
+      <button class="tab" data-view="quiz">quiz</button>
+      <button class="tab" data-view="cards">cards</button>
+      <button class="tab" data-view="stats">progress</button>
+      <button class="tab" data-view="plan">plan</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- START SCREEN -->
+    <section id="view-home" class="view active">
+      <div class="home">
+        <pre id="boot" class="boot" aria-hidden="true"></pre>
+        <div id="home-main" class="home-main">
+          <p class="home-kicker">// CompTIA Tech+ study tool</p>
+          <h1 class="home-title">certbuddy<span class="cursor"></span></h1>
+          <p class="home-tagline">Patch your knowledge gaps before exam day.</p>
+          <p class="home-sub muted">Practice quizzes, an AI tutor that explains your mistakes, flashcards that bring back what you forget, and a study plan that counts down to your exam.</p>
+          <div class="home-actions">
+            <button id="home-start" class="primary big">start studying <kbd>enter</kbd></button>
+            <button id="home-plan" class="ghost big">build a study plan</button>
+          </div>
+          <ul class="home-features">
+            <li><span class="ok">quiz</span> 120 original questions across 6 exam domains</li>
+            <li><span class="ok">tutor</span> ask why an answer was wrong, in plain English</li>
+            <li><span class="ok">cards</span> spaced repetition: miss it and it comes back sooner</li>
+            <li><span class="ok">plan</span> day-by-day schedule aimed at your weak spots</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- QUIZ -->
+    <section id="view-quiz" class="view">
+      <div id="quiz-setup" class="panel" data-title="quiz">
+        <h1>Practice quiz</h1>
+        <p class="muted">Pick a domain, or run all of them.</p>
+        <div class="field">domain
+          <select id="quiz-domain"><option value="">all domains</option></select>
+        </div>
+        <button id="start-quiz" class="primary">run 10 questions <kbd>enter</kbd></button>
+      </div>
+
+      <div id="quiz-play" class="panel hidden" data-title="quiz">
+        <div class="row meta">
+          <span id="quiz-domain-tag" class="tag"></span>
+          <span id="quiz-progress" class="muted"></span>
+        </div>
+        <div class="bar"><div id="quiz-bar"></div></div>
+        <h2 id="quiz-prompt" class="question"></h2>
+        <div id="quiz-choices" class="choices"></div>
+        <div id="quiz-feedback" class="feedback hidden"></div>
+        <div class="row actions">
+          <button id="explain-btn" class="ghost hidden">ask tutor <kbd>?</kbd></button>
+          <button id="next-btn" class="primary hidden">next <kbd>enter</kbd></button>
+        </div>
+      </div>
+
+      <div id="quiz-done" class="panel hidden" data-title="result">
+        <p class="muted">session complete</p>
+        <h1 id="quiz-score" class="score"></h1>
+        <p class="muted">Missed questions were queued in your flashcards.</p>
+        <button id="again-btn" class="primary">new quiz <kbd>enter</kbd></button>
+      </div>
+    </section>
+
+    <!-- FLASHCARDS -->
+    <section id="view-cards" class="view">
+      <div class="panel" data-title="cards">
+        <div class="row">
+          <h1>Flashcards</h1>
+          <span id="cards-left" class="muted"></span>
+        </div>
+        <div id="card-wrap">
+          <div id="card" class="card">
+            <div class="card-face front">
+              <span id="card-domain" class="tag"></span>
+              <p id="card-front"></p>
+              <span class="muted small">click or <kbd>space</kbd> to flip</span>
+            </div>
+            <div class="card-face back">
+              <span class="muted small">answer</span>
+              <p id="card-answer" class="answer"></p>
+              <p id="card-expl" class="muted"></p>
+            </div>
+          </div>
+          <div id="card-actions" class="row actions hidden">
+            <button id="card-wrong" class="bad">missed it <kbd>1</kbd></button>
+            <button id="card-right" class="good">got it <kbd>2</kbd></button>
+          </div>
+        </div>
+        <div id="cards-empty" class="empty hidden">
+          <p><span class="ok">0</span> cards due.</p>
+          <p class="muted">Queue is empty. Run a quiz or check back later.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROGRESS -->
+    <section id="view-stats" class="view">
+      <div class="panel" data-title="summary">
+        <dl class="readout">
+          <div><dt>answered</dt><dd id="s-total">0</dd></div>
+          <div><dt>accuracy</dt><dd id="s-acc">--</dd></div>
+          <div><dt>due now</dt><dd id="s-due">0</dd></div>
+          <div class="warn"><dt>focus area</dt><dd id="s-weak">--</dd></div>
+        </dl>
+      </div>
+      <div class="panel" data-title="accuracy by domain">
+        <canvas id="domain-chart" height="120"></canvas>
+      </div>
+      <div class="panel" data-title="memory strength">
+        <p class="muted small">box 1 = still learning / box 5 = mastered</p>
+        <canvas id="box-chart" height="80"></canvas>
+      </div>
+    </section>
+
+    <!-- STUDY PLAN -->
+    <section id="view-plan" class="view">
+      <div class="panel" data-title="plan">
+        <h1>Study plan</h1>
+        <p class="muted">Set your exam date. The schedule spends more days on your weak domains and the heaviest parts of the exam.</p>
+        <form id="plan-form" class="plan-form">
+          <div class="field">exam date
+            <div class="datepick">
+              <button type="button" id="plan-date-btn" class="date-btn" aria-haspopup="dialog" aria-expanded="false">
+                <span id="plan-date-label" class="muted">select a date</span><span class="caret">v</span>
+              </button>
+              <input type="hidden" id="plan-date" />
+              <div id="cal" class="cal hidden" role="dialog" aria-label="Choose exam date"></div>
+            </div>
+          </div>
+          <div class="field">time per day
+            <select id="plan-minutes">
+              <option value="15">15 min</option>
+              <option value="30" selected>30 min</option>
+              <option value="60">60 min</option>
+            </select>
+          </div>
+          <button type="submit" class="primary" id="plan-submit">build plan</button>
+        </form>
+        <p id="plan-error" class="error hidden"></p>
+      </div>
+
+      <div id="plan-result" class="hidden">
+        <div class="panel" data-title="countdown">
+          <dl class="readout">
+            <div><dt>days left</dt><dd id="p-days">--</dd></div>
+            <div><dt>exam date</dt><dd id="p-date">--</dd></div>
+            <div class="warn"><dt>top priority</dt><dd id="p-top">--</dd></div>
+          </dl>
+        </div>
+
+        <div id="plan-today" class="panel today hidden" data-title="today">
+          <h2 id="today-title"></h2>
+          <p id="today-reason" class="muted"></p>
+          <div id="today-tasks" class="tasks"></div>
+        </div>
+
+        <div class="panel" data-title="time allocation">
+          <p class="muted small">exam weight x your weakness. Answer more questions and this updates.</p>
+          <div id="plan-priorities" class="priorities"></div>
+        </div>
+
+        <div class="panel" data-title="schedule">
+          <ol id="plan-days" class="days"></ol>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="statusbar">
+    <span id="sb-exam">CompTIA Tech+</span>
+    <span id="sb-questions"></span>
+    <span id="sb-due"></span>
+    <span id="sb-ai"></span>
+    <span class="sb-right muted">a-d answer · enter next · ? tutor · space flip</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
